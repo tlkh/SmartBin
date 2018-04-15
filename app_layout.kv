@@ -15,7 +15,7 @@
                 font_size:30
                 text:'{{object}} DETECTED'
         GridLayout:
-            rows:3
+            rows:4
             width: 250
             size_hint_x: None
             Button:
@@ -33,6 +33,10 @@
                 on_press:
                     root.manager.transition.direction = 'left'
                     root.manager.current = 'aboutView'
+            Button:
+                id: btnExit
+                text: "Quit"
+                on_press: root.on_quit()
 <InfoView>
     BoxLayout:
         RstDocument:

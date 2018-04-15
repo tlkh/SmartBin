@@ -7,12 +7,22 @@ from threading import Thread
 import cv2, json, time
 
 # GUI modules
+
+from kivy.config import Config
+Config.set('graphics', 'fullscreen', 'fake')
+Config.set('graphics', 'fbo', 'software')
+Config.set('graphics', 'show_cursor', 1)
+Config.set('graphics', 'borderless', 0)
+Config.set('kivy', 'exit_on_escape', 1)
+Config.write()
+
 from kivy.app import App
 from kivy.graphics import *
 from kivy.lang import Builder
 from kivy.clock import Clock
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix import rst
+from kivy.core.window import Window
 
 # ========================
 # Computer Vision Pipeline
@@ -86,6 +96,11 @@ class MainView(Screen):
         objects_detected_label = str(pred.read())
         self.ids.labelObjDet.text = objects_detected_label + " " + str(round(time.time()-self.start_time,2))
 
+    def on_quit(self):
+        Window.close()
+        App.get_running_app().stop()
+        exit()
+
 class InfoView(Screen):
     """Secondary screen that displays information about recycling in Singapore"""
     
@@ -125,5 +140,10 @@ pred = predictions().start()
 class SmartBinApp(App):
     def build(self):
         return sm
-
-SmartBinApp().run()
+    
+try:
+    SmartBinApp().run()
+except KeyboardInterrupt:
+    App.get_running_app().stop()
+    print('exciting due to Keyboard')
+    exit()
