@@ -1,6 +1,5 @@
-print("Initialising Computer Vision pipeline")
-
 # computer vision pipeline modules
+print("[i] Initialising Computer Vision pipeline")
 import numpy as np
 from preprocessing import parse_annotation
 from utils import draw_boxes
@@ -12,17 +11,18 @@ import cv2, json, time
 # Computer Vision Pipeline
 # ========================
 
-config_path  = "config.json"
-weights_path = "best_weights8.h5"
+config_path  = "data/config.json"
+weights_path = "data/best_weights8.h5"
+frame_size = 1180,1180 # Kivy resizes to this size before displaying the image
 
 with open(config_path) as config_buffer:    
     config = json.load(config_buffer)
 
 from camera import PiVideoStream
 
-print("Loading feature extractor:", config['model']['backend'])
-print("Trained labels:", config['model']['labels'])
-print("Loading model... This will take a while... (< 2 mins)")
+print("[i] Loading feature extractor:", config['model']['backend'])
+print("[+] Trained labels:", config['model']['labels'])
+print("[i] Building model... This will take a while... (< 2 mins)")
 
 load_start = time.time()
 
@@ -32,11 +32,12 @@ yolo = YOLO(backend           = config['model']['backend'],
             max_box_per_image = config['model']['max_box_per_image'],
             anchors           = config['model']['anchors'])
 
-print("Model took", (time.time()-load_start), "seconds to load")
+print("[i] Model took", (time.time()-load_start), "seconds to load")
 
+print("[c] Starting video capture")
 cap = PiVideoStream().start()
 
-print("Loading weights from", weights_path)
+print("[i] Loading weights from", weights_path)
 yolo.load_weights(weights_path)
 
 class predictions():
@@ -66,9 +67,16 @@ class predictions():
     def stop(self):
         self.stopped = True
 
-frame = cap.read()
-boxes = yolo.predict(frame)
-pred = predictions().start()
+print("[i] Running self-test")
+try:
+    frame = cap.read()
+    boxes = yolo.predict(frame)
+    pred = predictions().start()
+    print("[i] Self-test: OK")
+except Exception as error:
+    print("[!] Fatal error:")
+    print(error)
+    exit()
 
 # GUI modules
 
@@ -96,8 +104,6 @@ from kivy.core.window import Window
 # ===========
 
 Builder.load_file('app_layout.kv') # Kivy layout file
-
-frame_size = 1180,1180
 
 # Declare individual screens
 class MainView(Screen):
@@ -161,6 +167,8 @@ class AboutView(Screen):
 # ==========================================
 # Tie everything together and launch the app
 # ==========================================
+
+print([u] Loading UI)
 
 # setup Kivy screen manager
 sm = ScreenManager()
