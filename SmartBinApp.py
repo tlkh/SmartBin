@@ -1,37 +1,43 @@
+print("Initialising Computer Vision pipeline")
+
 # computer vision pipeline modules
 import numpy as np
-#from preprocessing import parse_annotation
-#from utils import draw_boxes
-#from frontend import YOLO
+from preprocessing import parse_annotation
+from utils import draw_boxes
+from frontend import YOLO
 from threading import Thread
 import cv2, json, time
-
-# GUI modules
-
-from kivy.config import Config
-Config.set('graphics', 'fullscreen', 'fake')
-Config.set('graphics', 'fbo', 'software')
-Config.set('graphics', 'show_cursor', 1)
-Config.set('graphics', 'borderless', 0)
-Config.set('kivy', 'exit_on_escape', 1)
-Config.write()
-
-from kivy.app import App
-from kivy.graphics import *
-from kivy.lang import Builder
-from kivy.clock import Clock
-from kivy.uix.screenmanager import ScreenManager, Screen
-from kivy.uix import rst
-from kivy.core.window import Window
 
 # ========================
 # Computer Vision Pipeline
 # ========================
 
-#from camera import PiVideoStream
-#
-#cv2.namedWindow('image', cv2.WINDOW_NORMAL)
-#cv2.resizeWindow('image', 640, 480)
+config_path  = "config.json"
+weights_path = "best_weights8.h5"
+
+with open(config_path) as config_buffer:    
+    config = json.load(config_buffer)
+
+from camera import PiVideoStream
+
+print("Loading feature extractor:", config['model']['backend'])
+print("Trained labels:", config['model']['labels'])
+print("Loading model... This will take a while... (< 2 mins)")
+
+load_start = time.time()
+
+yolo = YOLO(backend           = config['model']['backend'],
+            input_size        = config['model']['input_size'], 
+            labels            = config['model']['labels'], 
+            max_box_per_image = config['model']['max_box_per_image'],
+            anchors           = config['model']['anchors'])
+
+print("Model took", (time.time()-load_start), "seconds to load")
+
+cap = PiVideoStream().start()
+
+print("Loading weights from", weights_path)
+yolo.load_weights(weights_path)
 
 class predictions():
     """Streaming inferences independently of camera and UI updates"""
@@ -46,17 +52,13 @@ class predictions():
         return self
 
     def update(self):
-        #global yolo
-        #global frame
+        global yolo, frame
         # keep looping infinitely until the thread is stopped
         while True:
             if self.stopped:
                 return
             else:
-                pass
-                #pred_start = time.time()
-                #self.boxes = yolo.predict(frame)
-                #print(round(1/(time.time() - pred_start), 3), "FPS")
+                self.boxes = yolo.predict(frame)
 
     def read(self):
         return self.boxes
@@ -64,37 +66,73 @@ class predictions():
     def stop(self):
         self.stopped = True
 
+frame = cap.read()
+boxes = yolo.predict(frame)
+pred = predictions().start()
+
+# GUI modules
+
+# Kivy configuration:
+# first run only, can disable afterwards
+from kivy.config import Config
+Config.set('graphics', 'fullscreen', 'fake')
+Config.set('graphics', 'fbo', 'hardware')
+Config.set('graphics', 'show_cursor', 1)
+Config.set('graphics', 'borderless', 0)
+Config.set('kivy', 'exit_on_escape', 1)
+Config.write()
+
+from kivy.app import App
+from kivy.graphics import *
+from kivy.graphics.texture import Texture
+from kivy.lang import Builder
+from kivy.clock import Clock
+from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix import rst
+from kivy.core.window import Window
+
 # ===========
 # GUI Classes
 # ===========
 
 Builder.load_file('app_layout.kv') # Kivy layout file
 
+frame_size = 1180,1180
+
 # Declare individual screens
 class MainView(Screen):
     """Main screen with camera feed and 3 buttons"""
     
     def __init__(self, **kwargs):
+        global cap, frame, frame_size
+        self.frame_size = frame_size
+        frame = cap.read()
+        image = cv2.flip(frame,0)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = cv2.resize(image, frame_size)
+        buf = image.tostring()
+        self.image_texture = Texture.create(size=( image.shape[1], image.shape[0]), colorfmt='rgb')
+        self.image_texture.blit_buffer(buf, colorfmt='rgb', bufferfmt='ubyte')
         super(MainView,self).__init__(**kwargs)
-        Clock.schedule_interval(self.tick,0.03334)
-        self.objects_detected = None
+        Clock.schedule_interval(self.tick,0.06)
         self.start_time = time.time()
-        with self.canvas:
-            self.rect = Rectangle(pos=(10, 10), size=(500, 500), source='img/placeholder.jpg')
-
-    # future reference (OpenCV):
-    # https://gist.github.com/ExpandOcean/de261e66949009f44ad2
 
     def tick(self, dt):
-        global pred
-        #global cap
-        #frame = cap.read()
-        #boxes = pred.read()
-        #frame = draw_boxes(frame, boxes, config['model']['labels'])
-        #cv2.imshow('image',frame)
-        #cv2.waitKey(1)
-        objects_detected_label = str(pred.read())
-        self.ids.labelObjDet.text = objects_detected_label + " " + str(round(time.time()-self.start_time,2))
+        global pred, cap, frame
+        frame = cap.read()
+        image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        boxes = pred.read()
+        image = draw_boxes(image, boxes, config['model']['labels'])
+        image = cv2.resize(cv2.flip(image,0), self.frame_size)
+        buf = image.tostring()
+        self.image_texture = Texture.create(size=(self.frame_size), colorfmt='rgb')
+        self.image_texture.blit_buffer(buf, colorfmt='rgb', bufferfmt='ubyte')
+        self.ids.cameraView.texture = self.image_texture
+        objects_detected_label = []
+        labels = ["can", "bottle"]
+        for box in boxes:
+            objects_detected_label.append(labels[box.get_label()])
+        self.ids.labelObjDet.text = str(objects_detected_label)
 
     def on_quit(self):
         Window.close()
@@ -124,18 +162,12 @@ class AboutView(Screen):
 # Tie everything together and launch the app
 # ==========================================
 
-# start capturing and streaming from camera
-#cap = PiVideoStream().start()
-
 # setup Kivy screen manager
 sm = ScreenManager()
 sm.add_widget(MainView(name='mainView'))
 sm.add_widget(InfoView(name='infoView'))
 sm.add_widget(HelpView(name='helpView'))
 sm.add_widget(AboutView(name='aboutView'))
-
-# begin streaming predictions
-pred = predictions().start()
 
 class SmartBinApp(App):
     def build(self):

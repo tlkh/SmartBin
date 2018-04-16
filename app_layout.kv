@@ -1,21 +1,23 @@
 <MainView>
-    spacing:10
-    padding:20
-    GridLayout:
-        cols:2
-        GridLayout:
-            rows:2
-            canvas:
-                Color:
-                    rgb: 10, 10, 10
+    BoxLayout:
+        padding:50
+        Image:
+            id: cameraView
+            texture: root.image_texture
+            height: 1180
+            size_hint_y: 1
+            width: 1180
+            size_hint_x: 1
             Label:
                 id: labelObjDet
                 size_hint_y: None
                 height: 100
-                font_size:30
+                font_size:40
+                pos: 650,200
                 text:'{{object}} DETECTED'
-        GridLayout:
-            rows:4
+        BoxLayout:
+            orientation: 'vertical'
+            spacing:20
             width: 250
             size_hint_x: None
             Button:
