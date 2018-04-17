@@ -82,7 +82,7 @@ class ObjectDetection(object):
 
         self.grid_h, self.grid_w = self.feature_extractor.get_output_shape()
 
-        print("Output from", backend, "has shape", self.grid_h, self.grid_w)    
+        print("Output from", backend, "has shape:", self.grid_h, ",", self.grid_w)    
                 
         features = self.feature_extractor.extract(input_image)            
 

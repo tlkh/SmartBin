@@ -9,17 +9,21 @@
                 size_hint_y: 1
                 width: 1180
                 size_hint_x: 1
+                pos_hint: {'x': 0, 'y': 0}
                 Label:
                     id: labelObjDet
                     size_hint_y: None
+                    size_hint_y: None
                     height: 100
                     font_size:40
-                    pos: 650,200
+                    pos: 650,300
+                    outline_color: (10,10,10)
+                    outline_width: 3
                     text:'{{object}} DETECTED'
             Image:
                 id: trashyView
                 source: "img/trashy.gif"
-                pos: 300,300
+                opacity: 1.0
         BoxLayout:
             orientation: 'vertical'
             spacing:20

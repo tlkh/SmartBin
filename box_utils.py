@@ -42,6 +42,7 @@ def bbox_iou(box1, box2):
 def draw_boxes(image, boxes, labels):
     image_h, image_w, _ = image.shape
 
+    #print(boxes)
     for box in boxes:
         xmin = int(box.xmin*image_w)
         ymin = int(box.ymin*image_h) 

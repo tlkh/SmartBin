@@ -131,11 +131,15 @@ class MainView(Screen):
         self.image_texture = Texture.create(size=( image.shape[1], image.shape[0]), colorfmt='rgb')
         self.image_texture.blit_buffer(buf, colorfmt='rgb', bufferfmt='ubyte')
         super(MainView,self).__init__(**kwargs)
+        self.t_x = 0
+        self.t_y = 0
+        self.labels = ["can", "bottle"]
         Clock.schedule_interval(self.tick,0.06)
         self.start_time = time.time()
 
     def tick(self, dt):
         global pred, cap, frame
+        can_detected, bottle_detected = False, False
         frame = cap.read()
         image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         boxes = pred.read()
@@ -146,17 +150,32 @@ class MainView(Screen):
         self.image_texture.blit_buffer(buf, colorfmt='rgb', bufferfmt='ubyte')
         self.ids.cameraView.texture = self.image_texture
         objects_detected_label = []
-        labels = ["can", "bottle"]
+        
         if len(boxes) > 0:
+            self.t_x = int((boxes[0].xmin-0.5) * 1000) - 80
+            self.t_y = -1 * (int((boxes[0].ymin-0.5) * 1000) + 80)
+            self.ids.trashyView.opacity = 1.0
+            self.ids.trashyView.pos = (self.t_x, self.t_y)
+            display_label = ""
             for box in boxes:
-                objects_detected_label.append(labels[box.get_label()])
-            self.ids.labelObjDet.text = str(objects_detected_label)
+                if self.labels[box.get_label()] == "can":
+                    can_detected = True
+                if self.labels[box.get_label()] == "bottle":
+                    bottle_detected = True
+            if can_detected == True:
+                display_label = display_label + "\nThrow your can in the recycling bin\nPlease wash the can first!" 
+            if bottle_detected == True:
+                display_label = display_label + "\nThrow your bottle into the recycling bin\nPlease empty it first!"
+            self.ids.labelObjDet.text = display_label
         else:
+            self.ids.trashyView.opacity = 0.0
             self.ids.labelObjDet.text = "No recyclable trash detected"
 
     def on_quit(self):
         Window.close()
         App.get_running_app().stop()
+        pred.stop()
+        cap.stop()
         exit()
 
 class InfoView(Screen):
@@ -199,4 +218,6 @@ try:
 except KeyboardInterrupt:
     print('exciting due to KeyboardInterrupt')
     App.get_running_app().stop()
+    pred.stop()
+    cap.stop()
     exit()
