@@ -1,20 +1,25 @@
 <MainView>
     BoxLayout:
         padding:50
-        Image:
-            id: cameraView
-            texture: root.image_texture
-            height: 1180
-            size_hint_y: 1
-            width: 1180
-            size_hint_x: 1
-            Label:
-                id: labelObjDet
-                size_hint_y: None
-                height: 100
-                font_size:40
-                pos: 650,200
-                text:'{{object}} DETECTED'
+        FloatLayout:
+            Image:
+                id: cameraView
+                texture: root.image_texture
+                height: 1180
+                size_hint_y: 1
+                width: 1180
+                size_hint_x: 1
+                Label:
+                    id: labelObjDet
+                    size_hint_y: None
+                    height: 100
+                    font_size:40
+                    pos: 650,200
+                    text:'{{object}} DETECTED'
+            Image:
+                id: trashyView
+                source: "img/trashy.gif"
+                pos: 300,300
         BoxLayout:
             orientation: 'vertical'
             spacing:20

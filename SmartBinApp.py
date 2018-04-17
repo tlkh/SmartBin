@@ -147,9 +147,12 @@ class MainView(Screen):
         self.ids.cameraView.texture = self.image_texture
         objects_detected_label = []
         labels = ["can", "bottle"]
-        for box in boxes:
-            objects_detected_label.append(labels[box.get_label()])
-        self.ids.labelObjDet.text = str(objects_detected_label)
+        if len(boxes) > 0:
+            for box in boxes:
+                objects_detected_label.append(labels[box.get_label()])
+            self.ids.labelObjDet.text = str(objects_detected_label)
+        else:
+            self.ids.labelObjDet.text = "No recyclable trash detected"
 
     def on_quit(self):
         Window.close()
