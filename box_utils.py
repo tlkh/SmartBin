@@ -1,7 +1,5 @@
 import numpy as np
 import os, copy, cv2
-import xml.etree.ElementTree as ET
-import tensorflow as tf
 
 class BoundBox:
     def __init__(self, xmin, ymin, xmax, ymax, c = None, classes = None):
@@ -10,7 +8,7 @@ class BoundBox:
         self.xmax = xmax
         self.ymax = ymax
         
-        self.c     = c
+        self.c = c
         self.classes = classes
 
         self.label = -1
@@ -27,18 +25,6 @@ class BoundBox:
             self.score = self.classes[self.get_label()]
             
         return self.score
-
-class WeightReader:
-    def __init__(self, weight_file):
-        self.offset = 4
-        self.all_weights = np.fromfile(weight_file, dtype='float32')
-        
-    def read_bytes(self, size):
-        self.offset = self.offset + size
-        return self.all_weights[self.offset-size:self.offset]
-    
-    def reset(self):
-        self.offset = 4
 
 def bbox_iou(box1, box2):
     intersect_w = _interval_overlap([box1.xmin, box1.xmax], [box2.xmin, box2.xmax])
@@ -126,60 +112,6 @@ def decode_netout(netout, anchors, nb_class, obj_threshold=0.3, nms_threshold=0.
     boxes = [box for box in boxes if box.get_score() > obj_threshold]
     
     return boxes    
-
-def compute_overlap(a, b):
-    """
-    Code originally from https://github.com/rbgirshick/py-faster-rcnn.
-    Parameters
-    ----------
-    a: (N, 4) ndarray of float
-    b: (K, 4) ndarray of float
-    Returns
-    -------
-    overlaps: (N, K) ndarray of overlap between boxes and query_boxes
-    """
-    area = (b[:, 2] - b[:, 0]) * (b[:, 3] - b[:, 1])
-
-    iw = np.minimum(np.expand_dims(a[:, 2], axis=1), b[:, 2]) - np.maximum(np.expand_dims(a[:, 0], 1), b[:, 0])
-    ih = np.minimum(np.expand_dims(a[:, 3], axis=1), b[:, 3]) - np.maximum(np.expand_dims(a[:, 1], 1), b[:, 1])
-
-    iw = np.maximum(iw, 0)
-    ih = np.maximum(ih, 0)
-
-    ua = np.expand_dims((a[:, 2] - a[:, 0]) * (a[:, 3] - a[:, 1]), axis=1) + area - iw * ih
-
-    ua = np.maximum(ua, np.finfo(float).eps)
-
-    intersection = iw * ih
-
-    return intersection / ua  
-    
-def compute_ap(recall, precision):
-    """ Compute the average precision, given the recall and precision curves.
-    Code originally from https://github.com/rbgirshick/py-faster-rcnn.
-
-    # Arguments
-        recall:    The recall curve (list).
-        precision: The precision curve (list).
-    # Returns
-        The average precision as computed in py-faster-rcnn.
-    """
-    # correct AP calculation
-    # first append sentinel values at the end
-    mrec = np.concatenate(([0.], recall, [1.]))
-    mpre = np.concatenate(([0.], precision, [0.]))
-
-    # compute the precision envelope
-    for i in range(mpre.size - 1, 0, -1):
-        mpre[i - 1] = np.maximum(mpre[i - 1], mpre[i])
-
-    # to calculate area under PR curve, look for points
-    # where X axis (recall) changes value
-    i = np.where(mrec[1:] != mrec[:-1])[0]
-
-    # and sum (\Delta recall) * prec
-    ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
-    return ap      
         
 def _interval_overlap(interval_a, interval_b):
     x1, x2 = interval_a
@@ -197,9 +129,18 @@ def _interval_overlap(interval_a, interval_b):
             return min(x2,x4) - x3          
 
 def _sigmoid(x):
+    """
+    Logistical regression curve
+    http://mathworld.wolfram.com/SigmoidFunction.html
+    """
     return 1. / (1. + np.exp(-x))
 
 def _softmax(x, axis=-1, t=-100.):
+    """
+    Softmax function
+    Outputs a list 
+    https://en.wikipedia.org/wiki/Softmax_function
+    """
     x = x - np.max(x)
     
     if np.min(x) < t:

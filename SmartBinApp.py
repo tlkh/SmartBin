@@ -1,19 +1,24 @@
-# computer vision pipeline modules
-print("[i] Initialising Computer Vision pipeline")
-import numpy as np
-from preprocessing import parse_annotation
-from utils import draw_boxes
-from frontend import YOLO
-from threading import Thread
-import cv2, json, time
-
-# ========================
-# Computer Vision Pipeline
-# ========================
+# =============
+# Configuration
+# =============
 
 config_path  = "data/config.json"
 weights_path = "data/best_weights8.h5"
-frame_size = 1180,1180 # Kivy resizes to this size before displaying the image
+frame_size = 1180, 1180 # Kivy resizes to this size before displaying the image
+
+# ===========================
+# Computer Vision Pipeline
+#   Components (as threads):
+#     1. Camera stream
+#     2. Inference stream
+# ===========================
+
+print("[i] Initialising Computer Vision pipeline")
+import cv2, json, time
+import numpy as np
+from box_utils import draw_boxes
+from object_detection_model import ObjectDetection
+from threading import Thread
 
 with open(config_path) as config_buffer:    
     config = json.load(config_buffer)
@@ -26,11 +31,11 @@ print("[i] Building model... This will take a while... (< 2 mins)")
 
 load_start = time.time()
 
-yolo = YOLO(backend           = config['model']['backend'],
-            input_size        = config['model']['input_size'], 
-            labels            = config['model']['labels'], 
-            max_box_per_image = config['model']['max_box_per_image'],
-            anchors           = config['model']['anchors'])
+model = ObjectDetection(backend = config['model']['backend'],
+            input_size          = config['model']['input_size'], 
+            labels              = config['model']['labels'], 
+            max_box_per_image   = config['model']['max_box_per_image'],
+            anchors             = config['model']['anchors'])
 
 print("[i] Model took", (time.time()-load_start), "seconds to load")
 
@@ -38,10 +43,15 @@ print("[c] Starting video capture")
 cap = PiVideoStream().start()
 
 print("[i] Loading weights from", weights_path)
-yolo.load_weights(weights_path)
+model.load_weights(weights_path)
 
 class predictions():
-    """Streaming inferences independently of camera and UI updates"""
+    """
+    Streaming inferences independently of camera and UI updates
+    Makes use of the following global variables:
+      1. current frame from camera stream
+      2. currently loaded object detection model
+    """
     
     def __init__(self):
         self.boxes = ["can", "bottle"]
@@ -53,13 +63,13 @@ class predictions():
         return self
 
     def update(self):
-        global yolo, frame
+        global model, frame
         # keep looping infinitely until the thread is stopped
         while True:
             if self.stopped:
                 return
             else:
-                self.boxes = yolo.predict(frame)
+                self.boxes = model.predict(frame)
 
     def read(self):
         return self.boxes
@@ -70,18 +80,19 @@ class predictions():
 print("[i] Running self-test")
 try:
     frame = cap.read()
-    boxes = yolo.predict(frame)
+    boxes = model.predict(frame)
     pred = predictions().start()
-    print("[i] Self-test: OK")
+    print("[+] Self-test: OK")
 except Exception as error:
-    print("[!] Fatal error:")
+    print("[!] Fatal error", end=": ")
     print(error)
     exit()
 
-# GUI modules
+# ==============================
+# Kivy Configuration
+#   Only needed on the first run
+# ==============================
 
-# Kivy configuration:
-# first run only, can disable afterwards
 from kivy.config import Config
 Config.set('graphics', 'fullscreen', 'fake')
 Config.set('graphics', 'fbo', 'hardware')
@@ -89,6 +100,10 @@ Config.set('graphics', 'show_cursor', 1)
 Config.set('graphics', 'borderless', 0)
 Config.set('kivy', 'exit_on_escape', 1)
 Config.write()
+
+# =========
+# GUI Setup
+# =========
 
 from kivy.app import App
 from kivy.graphics import *
@@ -98,10 +113,6 @@ from kivy.clock import Clock
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix import rst
 from kivy.core.window import Window
-
-# ===========
-# GUI Classes
-# ===========
 
 Builder.load_file('app_layout.kv') # Kivy layout file
 
@@ -163,12 +174,11 @@ class AboutView(Screen):
     def __init__(self, **kwargs):
         super(AboutView,self).__init__(**kwargs)
 
-
 # ==========================================
 # Tie everything together and launch the app
 # ==========================================
 
-print([u] Loading UI)
+print("[u] Loading UI")
 
 # setup Kivy screen manager
 sm = ScreenManager()
@@ -184,6 +194,6 @@ class SmartBinApp(App):
 try:
     SmartBinApp().run()
 except KeyboardInterrupt:
+    print('exciting due to KeyboardInterrupt')
     App.get_running_app().stop()
-    print('exciting due to Keyboard')
     exit()

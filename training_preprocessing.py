@@ -61,6 +61,11 @@ def parse_annotation(ann_dir, img_dir, labels=[]):
     return all_imgs, seen_labels
 
 class BatchGenerator(Sequence):
+    """
+    Custom BatchGenerator class
+    Credits: experiencor/keras-yolo2
+    """
+
     def __init__(self, images, 
                        config, 
                        shuffle=True, 
