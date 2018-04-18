@@ -14,6 +14,9 @@ class MobileNetFeatureExtractor:
     Andrew G. Howard, Menglong Zhu, Bo Chen, Dmitry Kalenichenko, Weijun Wang, Tobias Weyand, Marco Andreetto, Hartwig Adam
     April 2017 [arXiv:1704.04861v1 [cs.CV]]
     https://arxiv.org/abs/1704.04861
+
+    Implementation as a feature extractor adapted from:
+    https://github.com/experiencor/keras-yolo2/blob/master/backend.py
     """
 
     def __init__(self, input_size):
@@ -65,15 +68,11 @@ class ObjectDetection(object):
         # Feature extraction layer
         # ========================
 
-        if backend == 'MobileNet':
-            self.feature_extractor = MobileNetFeatureExtractor(self.input_size)
-        else:
-            raise Exception('Architecture not supported! Only supports MobileNet in this configuration.')
-            exit()
+        self.feature_extractor = MobileNetFeatureExtractor(self.input_size)
 
         self.grid_h, self.grid_w = self.feature_extractor.get_output_shape()
 
-        print("Output from", backend, "has shape:", self.grid_h, ",", self.grid_w)    
+        print("Output from feature extractor has shape:", self.grid_h, ",", self.grid_w)    
                 
         features = self.feature_extractor.extract(input_image)            
 
@@ -84,6 +83,7 @@ class ObjectDetection(object):
         MULT = 3 # increase the number of Convolutional filters, if the object classes prove harder to detect
 
         # tensor shape: (1, 7, 7, 1024)
+        # intepretation: 7*7 grid of feature vectors describing each grid segment
         output = Conv2D(MULT * self.nb_box * (4 + 1 + self.nb_class), # 105 filters if MULT == 3
                         (1,1), strides=(1,1), 
                         padding='same', 
@@ -91,7 +91,7 @@ class ObjectDetection(object):
                         kernel_initializer='lecun_normal')(features)
 
         # tensor shape: (1, 7, 7, 105)
-        # intepretation: 7*7 grid of bounding box predictions
+        # intepretation: 7*7 grid of bounding box predictions for each grid segment
         output = Reshape((self.grid_h, self.grid_w, self.nb_box, MULT * (4 + 1 + self.nb_class)))(output)
 
         # tensor shape: (1, 7, 7, 5, 21)
@@ -99,34 +99,15 @@ class ObjectDetection(object):
 
         self.model = Model([input_image, self.true_boxes], output)
 
-        # initialize the weights of the detection layer
-        layer = self.model.layers[-4]
+        # initialize the weights of the detection layer (for training)
+        """layer = self.model.layers[-4]
         weights = layer.get_weights()
-
         new_kernel = np.random.normal(size=weights[0].shape)/(self.grid_h*self.grid_w)
         new_bias   = np.random.normal(size=weights[1].shape)/(self.grid_h*self.grid_w)
-
-        layer.set_weights([new_kernel, new_bias])
+        layer.set_weights([new_kernel, new_bias])"""
 
         # print a summary of the whole model
         self.model.summary()
-
-    def draw_boxes(self, image, boxes, labels):
-        image_h, image_w, _ = image.shape
-
-        for box in boxes:
-            xmin = int(box.xmin*image_w)
-            ymin = int(box.ymin*image_h)
-            xmax = int(box.xmax*image_w)
-            ymax = int(box.ymax*image_h)
-            cv2.rectangle(image, (xmin,ymin), (xmax,ymax), (0,255,0), 2)
-            cv2.putText(image, 
-                        labels[box.get_label()], 
-                        (xmin, ymin - 5), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 
-                        0.8, 
-                        (0,255,0), 2)
-        return image
 
     def load_weights(self, weight_path):
         self.model.load_weights(weight_path)
