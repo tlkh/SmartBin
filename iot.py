@@ -1,3 +1,11 @@
+'''
+firebase requires these imports:
+
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import db
+import matplotlib as plt
+'''
 def firebase_setup():
     import firebase_admin
     from firebase_admin import credentials
@@ -12,7 +20,7 @@ def firebase_setup():
 
 
 def firebase_reset(firebase):
-    users = ['ken', 'tim', 'grace', 'shuaishuai', 'frank']
+    users = ['ken', 'tim', 'grace', 'shelly', 'frank']
     categories = ['bottles', 'cans', 'others']
     
     for user in users:
@@ -45,7 +53,7 @@ def firebase_stats(firebase):
 
 
 def firebase_random(firebase):
-    users = ['ken', 'tim', 'grace', 'shuaishuai', 'frank']
+    users = ['ken', 'tim', 'grace', 'shelly', 'frank']
     categories = ['bottles', 'cans', 'others']
     
     from random import randint
@@ -57,8 +65,6 @@ def firebase_random(firebase):
 
 
 def firebase_plot(firebase):
-    import matplotlib.pyplot as plt
-    
     by_user_count, by_category_count = firebase_stats(firebase)
     
     plt.bar(range(len(by_user_count)), by_user_count.values())

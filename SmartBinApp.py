@@ -105,6 +105,18 @@ except Exception as error:
     print(error)
     exit()
 
+# =========
+# IOT Setup
+# =========
+
+import firebase_admin
+from firebase_admin import credentials, db
+import matplotlib.pyplot as plt
+from iot import *
+
+firebase = firebase_setup()
+firebase_reset(firebase)
+
 # ==============================
 # Kivy Configuration
 #   Only needed on the first run
@@ -139,6 +151,7 @@ class MainView(Screen):
     
     def __init__(self, **kwargs):
         global cap, frame, frame_size
+        self.current_user = 'No user yet'
         self.frame_size = frame_size
         frame = cap.read()
         image = cv2.flip(frame,0)
@@ -151,10 +164,11 @@ class MainView(Screen):
         self.t_x = 0
         self.t_y = 0
         self.labels = ["can", "bottle", "ken", "grace", "frank", "tim", "shelly"]
+        self.users = ["ken", "grace", "frank", "tim", "shelly"]
         Clock.schedule_interval(self.tick,0.06)
         
     def tick(self, dt):
-        global pred, cap, frame, strip, red, green
+        global pred, cap, frame, strip, red, green, firebase
         can_detected, bottle_detected = False, False
         frame = cap.read()
         image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -178,12 +192,16 @@ class MainView(Screen):
                     can_detected = True
                 if self.labels[curr_label] == "bottle":
                     bottle_detected = True
+                if self.labels[curr_label] in self.users:
+                    self.current_user = self.labels[curr_label]
             if can_detected == True:
                 for i in range(8):
                     strip.setPixelColor(i, red)
                 for i in range(15,25):
                     strip.setPixelColor(i, green)
                 display_label = display_label + "\nThrow your can in the recycling bin\nPlease wash the can first!"
+                if self.current_user in self.users:
+                    firebase_update(firebase, self.current_user, 'cans', 1)
             if bottle_detected == True:
                 for i in range(8):
                     strip.setPixelColor(i, red)
@@ -201,6 +219,10 @@ class MainView(Screen):
             strip.setPixelColor(i, green)
 
     def on_quit(self):
+        global strip
+        for i in range(strip.numPixels()):
+            strip.setPixelColor(i, Color(0,0,0))
+        strip.show()
         Window.close()
         App.get_running_app().stop()
         pred.stop()
@@ -243,6 +265,9 @@ try:
     SmartBinApp().run()
 except KeyboardInterrupt:
     print('exciting due to KeyboardInterrupt')
+    for i in range(strip.numPixels()):
+        strip.setPixelColor(i, Color(0,0,0))
+    strip.show()
     App.get_running_app().stop()
     pred.stop()
     cap.stop()
