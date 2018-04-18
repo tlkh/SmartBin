@@ -1,1 +1,1 @@
-.. image:: img/about_60.jpg
+.. image:: img/about.jpg

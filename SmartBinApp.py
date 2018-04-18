@@ -3,8 +3,23 @@
 # =============
 
 config_path  = "data/config.json"
-weights_path = "data/best_weights8.h5"
+weights_path = "data/best_weights_11.h5"
 frame_size = 1180, 1180 # Kivy resizes to this size before displaying the image
+
+from neopixel import *
+
+red = Color(0,255,0)
+green = Color(255,0,0)
+
+# Create NeoPixel object with appropriate configuration.
+strip = Adafruit_NeoPixel(25, 18, 800000, 10, False, 100, 0)
+# Intialize the library (must be called once before other functions).
+strip.begin()
+for i in range(strip.numPixels()):
+    strip.setPixelColor(i, red)
+for i in range(8):
+    strip.setPixelColor(i, green)
+strip.show()
 
 # ===========================
 # Computer Vision Pipeline
@@ -19,6 +34,8 @@ import numpy as np
 from box_utils import draw_boxes
 from object_detection_model import ObjectDetection
 from threading import Thread
+
+
 
 with open(config_path) as config_buffer:    
     config = json.load(config_buffer)
@@ -54,7 +71,7 @@ class predictions():
     """
     
     def __init__(self):
-        self.boxes = ["can", "bottle"]
+        self.boxes = ["can", "bottle", "ken", "grace", "frank", "tim", "shelly"]
         self.stopped = False
 
     def start(self):
@@ -133,12 +150,11 @@ class MainView(Screen):
         super(MainView,self).__init__(**kwargs)
         self.t_x = 0
         self.t_y = 0
-        self.labels = ["can", "bottle"]
+        self.labels = ["can", "bottle", "ken", "grace", "frank", "tim", "shelly"]
         Clock.schedule_interval(self.tick,0.06)
-        self.start_time = time.time()
-
+        
     def tick(self, dt):
-        global pred, cap, frame
+        global pred, cap, frame, strip, red, green
         can_detected, bottle_detected = False, False
         frame = cap.read()
         image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -149,7 +165,6 @@ class MainView(Screen):
         self.image_texture = Texture.create(size=(self.frame_size), colorfmt='rgb')
         self.image_texture.blit_buffer(buf, colorfmt='rgb', bufferfmt='ubyte')
         self.ids.cameraView.texture = self.image_texture
-        objects_detected_label = []
         
         if len(boxes) > 0:
             self.t_x = int((boxes[0].xmin-0.5) * 1000) - 80
@@ -158,18 +173,32 @@ class MainView(Screen):
             self.ids.trashyView.pos = (self.t_x, self.t_y)
             display_label = ""
             for box in boxes:
-                if self.labels[box.get_label()] == "can":
+                curr_label = box.get_label()
+                if self.labels[curr_label] == "can":
                     can_detected = True
-                if self.labels[box.get_label()] == "bottle":
+                if self.labels[curr_label] == "bottle":
                     bottle_detected = True
             if can_detected == True:
-                display_label = display_label + "\nThrow your can in the recycling bin\nPlease wash the can first!" 
+                for i in range(8):
+                    strip.setPixelColor(i, red)
+                for i in range(15,25):
+                    strip.setPixelColor(i, green)
+                display_label = display_label + "\nThrow your can in the recycling bin\nPlease wash the can first!"
             if bottle_detected == True:
+                for i in range(8):
+                    strip.setPixelColor(i, red)
+                for i in range(8,15):
+                    strip.setPixelColor(i, green)
                 display_label = display_label + "\nThrow your bottle into the recycling bin\nPlease empty it first!"
             self.ids.labelObjDet.text = display_label
         else:
             self.ids.trashyView.opacity = 0.0
             self.ids.labelObjDet.text = "No recyclable trash detected"
+        strip.show()
+        for i in range(strip.numPixels()):
+            strip.setPixelColor(i, red)
+        for i in range(8):
+            strip.setPixelColor(i, green)
 
     def on_quit(self):
         Window.close()
@@ -184,11 +213,6 @@ class InfoView(Screen):
     def __init__(self, **kwargs):
         super(InfoView,self).__init__(**kwargs)
 
-class HelpView(Screen):
-    """Secondary screen that assists the user"""
-    
-    def __init__(self, **kwargs):
-        super(HelpView,self).__init__(**kwargs)
 
 class AboutView(Screen):
     """Secondary screen that displays information about this project"""
@@ -200,13 +224,15 @@ class AboutView(Screen):
 # Tie everything together and launch the app
 # ==========================================
 
+from kivy.core.window import Window
+Window.clearcolor = (1, 1, 1, 1)
+
 print("[u] Loading UI")
 
 # setup Kivy screen manager
 sm = ScreenManager()
 sm.add_widget(MainView(name='mainView'))
 sm.add_widget(InfoView(name='infoView'))
-sm.add_widget(HelpView(name='helpView'))
 sm.add_widget(AboutView(name='aboutView'))
 
 class SmartBinApp(App):

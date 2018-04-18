@@ -24,23 +24,24 @@
                 id: trashyView
                 source: "img/trashy.gif"
                 opacity: 1.0
+
         BoxLayout:
             orientation: 'vertical'
             spacing:20
             width: 250
             size_hint_x: None
+##            Button:
+##                text: 'Recycling in Singapore'
+##                on_press:
+##                    root.manager.transition.direction = 'left'
+##                    root.manager.current = 'infoView'
             Button:
-                text: 'Recycling in Singapore'
-                on_press:
-                    root.manager.transition.direction = 'left'
-                    root.manager.current = 'infoView'
-            Button:
-                text: 'Help me!'
+                text: 'How do I recycle?'
                 on_press:
                     root.manager.transition.direction = 'left'
                     root.manager.current = 'helpView'
             Button:
-                text: "What's this about?"
+                text: "About our project!"
                 on_press:
                     root.manager.transition.direction = 'left'
                     root.manager.current = 'aboutView'
@@ -48,19 +49,22 @@
                 id: btnExit
                 text: "Quit"
                 on_press: root.on_quit()
+
 <InfoView>
     BoxLayout:
-        RstDocument:
-            source: 'data/recycling_new.rst'
+        Image:
+            source: 'img/recycling.jpg'
         BoxLayout:
             orientation: 'vertical'
-            RstDocument:
-                source: 'data/trashy.rst'
-            Button:
-                text: 'Back to Main Screen'
-                on_press:
-                    root.manager.transition.direction = 'right'
-                    root.manager.current = 'mainView'
+            BoxLayout:
+                Image:
+                    source: 'img/trashy.gif'
+                Button:
+                    text: 'Back to Main Screen'
+                    on_press:
+                        root.manager.transition.direction = 'right'
+                        root.manager.current = 'mainView'
+
 <HelpView>
     BoxLayout:
         Button:
@@ -70,10 +74,11 @@
             on_press:
                 root.manager.transition.direction = 'right'
                 root.manager.current = 'mainView'
+
 <AboutView>
     BoxLayout:
-        RstDocument:
-            source: 'data/about_new.rst'
+        Image:
+            source: 'img/about.jpg'
         Button:
             text: 'Back to Main Screen'
             on_press:

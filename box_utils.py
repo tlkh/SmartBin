@@ -52,14 +52,15 @@ def draw_boxes(image, boxes, labels):
         if label == "can":
             cv2.rectangle(image, (xmin,ymin), (xmax,ymax), (0,255,0), 2)
         elif label == "bottle":
-            cv2.rectangle(image, (xmin,ymin), (xmax,ymax), (255,255,0), 2)
-        
-        """cv2.putText(image, 
-                    labels[box.get_label()] + ' ' + str(box.get_score()), 
-                    (xmin, ymin - 5), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 
-                    10, 
-                    (255,255,255), 10)"""
+            cv2.rectangle(image, (xmin,ymin), (xmax,ymax), (0,255,255), 2)
+        else:
+            cv2.rectangle(image, (xmin,ymin), (xmax,ymax), (255,255,255), 2)
+            cv2.putText(image, 
+                        labels[box.get_label()] + ' ' + str(round(box.get_score(),2)), 
+                        (xmin, ymin - 5), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 
+                        0.4, 
+                        (255,255,255), 1)
         
     return image          
         

@@ -1,1 +1,1 @@
-.. image:: img/recycling_60.jpg
+.. image:: img/recycling.jpg
