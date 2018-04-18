@@ -2,8 +2,6 @@ import numpy as np
 import cv2
 from keras.models import Model
 from keras.layers import Input, Conv2D, Reshape, Lambda
-from keras.optimizers import SGD, Adam, RMSprop
-from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
 from keras.applications.mobilenet import MobileNet
 from box_utils import decode_netout, compute_overlap, compute_ap
 
@@ -43,7 +41,7 @@ class MobileNetFeatureExtractor:
 class ObjectDetection(object):
     def __init__(self, backend,
                        input_size, 
-                       labels, 
+                       labels,
                        max_box_per_image,
                        anchors):
 
@@ -72,8 +70,8 @@ class ObjectDetection(object):
 
         self.grid_h, self.grid_w = self.feature_extractor.get_output_shape()
 
-        print("Output from feature extractor has shape:", self.grid_h, ",", self.grid_w)    
-                
+        print("Output from feature extractor has shape:", self.grid_h, ",", self.grid_w) 
+  
         features = self.feature_extractor.extract(input_image)            
 
         # ======================
@@ -112,7 +110,6 @@ class ObjectDetection(object):
         self.model.save(path)
         
     def to_json(self, path):
-        import json
         return self.model.to_json()
 
     def predict(self, image):
