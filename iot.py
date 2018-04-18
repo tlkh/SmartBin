@@ -1,12 +1,12 @@
-'''
-firebase requires these imports:
-
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import db
-import matplotlib as plt
-'''
+from matplotlib import pyplot as plt
+
 def firebase_setup():
+    """
+    TODO: Docstring
+    """
     import firebase_admin
     from firebase_admin import credentials
     from firebase_admin import db
@@ -18,8 +18,10 @@ def firebase_setup():
     
     return firebase
 
-
 def firebase_reset(firebase):
+    """
+    TODO: Docstring
+    """
     users = ['ken', 'tim', 'grace', 'shelly', 'frank']
     categories = ['bottles', 'cans', 'others']
     
@@ -31,6 +33,9 @@ def firebase_reset(firebase):
 
 
 def firebase_update(firebase, user, category, increment):
+    """
+    TODO: Docstring
+    """
     current = firebase.child(user).child(category).get()
     firebase.child(user).child(category).set(current + increment)
     
@@ -38,6 +43,9 @@ def firebase_update(firebase, user, category, increment):
 
 
 def firebase_stats(firebase):
+    """
+    TODO: Docstring
+    """
     data = firebase.get()
     by_user_count = {user: sum(data[user].values()) for user in data.keys()}
     by_category_count = {}
@@ -53,6 +61,9 @@ def firebase_stats(firebase):
 
 
 def firebase_random(firebase):
+    """
+    TODO: Docstring
+    """
     users = ['ken', 'tim', 'grace', 'shelly', 'frank']
     categories = ['bottles', 'cans', 'others']
     
@@ -65,6 +76,9 @@ def firebase_random(firebase):
 
 
 def firebase_plot(firebase):
+    """
+    TODO: Docstring
+    """
     by_user_count, by_category_count = firebase_stats(firebase)
     
     plt.bar(range(len(by_user_count)), by_user_count.values())

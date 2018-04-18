@@ -1,16 +1,11 @@
+import numpy as np
+import cv2
 from keras.models import Model
 from keras.layers import Input, Conv2D, Reshape, Lambda
-import tensorflow as tf
-import numpy as np
-import matplotlib.pyplot as plt
-import os
-import cv2
-from box_utils import decode_netout, compute_overlap, compute_ap
 from keras.optimizers import SGD, Adam, RMSprop
 from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
-
 from keras.applications.mobilenet import MobileNet
-MOBILENET_BACKEND_PATH  = "mobilenet_backend.h5"
+from box_utils import decode_netout, compute_overlap, compute_ap
 
 class MobileNetFeatureExtractor:
     """
@@ -25,8 +20,7 @@ class MobileNetFeatureExtractor:
         input_image = Input(shape=(input_size, input_size, 3))
 
         mobilenet = MobileNet(input_shape=(224,224,3), include_top=False)
-        mobilenet.load_weights(MOBILENET_BACKEND_PATH)
-
+        mobilenet.load_weights("data/mobilenet_backend.h5")
         x = mobilenet(input_image)
 
         self.feature_extractor = Model(input_image, x)  
@@ -35,7 +29,6 @@ class MobileNetFeatureExtractor:
         image = image / 255.
         image = image - 0.5
         image = image * 2.
-
         return image
 
     def get_output_shape(self):
@@ -52,13 +45,11 @@ class ObjectDetection(object):
                        anchors):
 
         self.input_size = input_size
-        
         self.labels   = list(labels)
         self.nb_class = len(self.labels)
         self.nb_box   = len(anchors)//2
         self.class_wt = np.ones(self.nb_class, dtype='float32')
         self.anchors  = anchors
-
         self.max_box_per_image = max_box_per_image
 
         # =======================================
@@ -152,7 +143,6 @@ class ObjectDetection(object):
 
     def predict(self, image):
         image_h, image_w, _ = image.shape
-        #image = cv2.resize(image, (self.input_size, self.input_size))
         image = self.feature_extractor.normalize(image)
 
         input_image = image[:,:,::-1]

@@ -6,6 +6,10 @@ config_path  = "data/config.json"
 weights_path = "data/best_weights_11.h5"
 frame_size = 1180, 1180 # Kivy resizes to this size before displaying the image
 
+# ====================
+# Initialise LED Strip
+# ====================
+
 from neopixel import *
 
 red = Color(0,255,0)
@@ -34,8 +38,6 @@ import numpy as np
 from box_utils import draw_boxes
 from object_detection_model import ObjectDetection
 from threading import Thread
-
-
 
 with open(config_path) as config_buffer:    
     config = json.load(config_buffer)
@@ -94,17 +96,6 @@ class predictions():
     def stop(self):
         self.stopped = True
 
-print("[i] Running self-test")
-try:
-    frame = cap.read()
-    boxes = model.predict(frame)
-    pred = predictions().start()
-    print("[+] Self-test: OK")
-except Exception as error:
-    print("[!] Fatal error", end=": ")
-    print(error)
-    exit()
-
 # =========
 # IOT Setup
 # =========
@@ -116,6 +107,21 @@ from iot import *
 
 firebase = firebase_setup()
 firebase_reset(firebase)
+
+# ======================================================
+# Perform one inference to test if everything is working
+# ======================================================
+
+print("[i] Running self-test")
+try:
+    frame = cap.read()
+    boxes = model.predict(frame)
+    pred = predictions().start()
+    print("[+] Self-test: OK")
+except Exception as error:
+    print("[!] Fatal error", end=": ")
+    print(error)
+    exit()
 
 # ==============================
 # Kivy Configuration
@@ -140,7 +146,6 @@ from kivy.graphics.texture import Texture
 from kivy.lang import Builder
 from kivy.clock import Clock
 from kivy.uix.screenmanager import ScreenManager, Screen
-from kivy.uix import rst
 from kivy.core.window import Window
 
 Builder.load_file('app_layout.kv') # Kivy layout file
@@ -151,7 +156,8 @@ class MainView(Screen):
     
     def __init__(self, **kwargs):
         global cap, frame, frame_size
-        self.current_user = 'No user yet'
+        
+        # capture and render the first frame
         self.frame_size = frame_size
         frame = cap.read()
         image = cv2.flip(frame,0)
@@ -160,16 +166,27 @@ class MainView(Screen):
         buf = image.tostring()
         self.image_texture = Texture.create(size=( image.shape[1], image.shape[0]), colorfmt='rgb')
         self.image_texture.blit_buffer(buf, colorfmt='rgb', bufferfmt='ubyte')
-        super(MainView,self).__init__(**kwargs)
+
+        # create keyboard bindings
+        self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
+        self._keyboard.bind(on_key_down=self._on_keyboard_down)
+
+        # coordinates of Trashy
         self.t_x = 0
         self.t_y = 0
+
+        self.current_user = 'No user yet'
         self.labels = ["can", "bottle", "ken", "grace", "frank", "tim", "shelly"]
         self.users = ["ken", "grace", "frank", "tim", "shelly"]
+
+        super(MainView,self).__init__(**kwargs)
         Clock.schedule_interval(self.tick,0.06)
         
     def tick(self, dt):
         global pred, cap, frame, strip, red, green, firebase
+
         can_detected, bottle_detected = False, False
+
         frame = cap.read()
         image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         boxes = pred.read()
@@ -208,6 +225,8 @@ class MainView(Screen):
                 for i in range(8,15):
                     strip.setPixelColor(i, green)
                 display_label = display_label + "\nThrow your bottle into the recycling bin\nPlease empty it first!"
+                if self.current_user in self.users:
+                    firebase_update(firebase, self.current_user, 'bottles', 1)
             self.ids.labelObjDet.text = display_label
         else:
             self.ids.trashyView.opacity = 0.0
@@ -218,15 +237,29 @@ class MainView(Screen):
         for i in range(8):
             strip.setPixelColor(i, green)
 
-    def on_quit(self):
+    def _keyboard_closed(self):
+        self._keyboard.unbind(on_key_down=self._on_keyboard_down)
+        self._keyboard = None
+
+    def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
+        global sm
+        if keycode[1] == '1':
+            sm.current = 'infoView'
+        elif keycode[1] == '2':
+            sm.current = 'aboutView'
+        elif keycode[1] == '3':
+            self.quit()
+        return True
+
+    def quit(self):
         global strip
+        pred.stop()
+        cap.stop()
         for i in range(strip.numPixels()):
             strip.setPixelColor(i, Color(0,0,0))
         strip.show()
         Window.close()
         App.get_running_app().stop()
-        pred.stop()
-        cap.stop()
         exit()
 
 class InfoView(Screen):
@@ -234,22 +267,45 @@ class InfoView(Screen):
     
     def __init__(self, **kwargs):
         super(InfoView,self).__init__(**kwargs)
+        # create keyboard bindings
+        self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
+        self._keyboard.bind(on_key_down=self._on_keyboard_down)
 
+    def _keyboard_closed(self):
+        self._keyboard.unbind(on_key_down=self._on_keyboard_down)
+        self._keyboard = None
+
+    def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
+        global sm
+        if keycode[1] == 'a':
+            sm.current = 'mainView'
+        return True
 
 class AboutView(Screen):
     """Secondary screen that displays information about this project"""
     
     def __init__(self, **kwargs):
         super(AboutView,self).__init__(**kwargs)
+        # create keyboard bindings
+        self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
+        self._keyboard.bind(on_key_down=self._on_keyboard_down)
+
+    def _keyboard_closed(self):
+        self._keyboard.unbind(on_key_down=self._on_keyboard_down)
+        self._keyboard = None
+
+    def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
+        global sm
+        if keycode[1] == 'a':
+            sm.current = 'mainView'
+        return True
 
 # ==========================================
 # Tie everything together and launch the app
 # ==========================================
 
-from kivy.core.window import Window
-Window.clearcolor = (1, 1, 1, 1)
-
 print("[u] Loading UI")
+Window.clearcolor = (1, 1, 1, 1) # set white background
 
 # setup Kivy screen manager
 sm = ScreenManager()
@@ -264,11 +320,11 @@ class SmartBinApp(App):
 try:
     SmartBinApp().run()
 except KeyboardInterrupt:
+    pred.stop()
+    cap.stop()
     print('exciting due to KeyboardInterrupt')
     for i in range(strip.numPixels()):
         strip.setPixelColor(i, Color(0,0,0))
     strip.show()
     App.get_running_app().stop()
-    pred.stop()
-    cap.stop()
     exit()

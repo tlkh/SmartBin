@@ -1,1 +1,0 @@
-.. image:: img/about.jpg
