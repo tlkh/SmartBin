@@ -99,13 +99,6 @@ class ObjectDetection(object):
 
         self.model = Model([input_image, self.true_boxes], output)
 
-        # initialize the weights of the detection layer (for training)
-        """layer = self.model.layers[-4]
-        weights = layer.get_weights()
-        new_kernel = np.random.normal(size=weights[0].shape)/(self.grid_h*self.grid_w)
-        new_bias   = np.random.normal(size=weights[1].shape)/(self.grid_h*self.grid_w)
-        layer.set_weights([new_kernel, new_bias])"""
-
         # print a summary of the whole model
         self.model.summary()
 
