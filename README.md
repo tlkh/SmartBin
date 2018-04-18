@@ -60,7 +60,9 @@ Getting everything to run on a resource constraint device such as a Raspberry Pi
 3. Compile and install TensorFlow **r1.4** (oh no) ([Guide](https://github.com/samjabrahams/tensorflow-on-raspberry-pi/blob/master/GUIDE.md)) (Note: takes 6~7h)
 4. Install [Kivy](https://kivy.org/docs/installation/installation-rpi.html)
 5. Install [Neopixel library for Raspberry Pi](https://learn.adafruit.com/neopixels-on-raspberry-pi/software) (LED strip `DATA-IN` pin goes to `GPIO18`)
-6. Run `sudo python3 SmartBinApp.py` (**run as root to enable LED strip control**)
+6. Run `sudo python3 SmartBinApp.py` (**run as root to enable LED strip control**) 
+
+The loading process for the app does take around 120s in total.
 
 Other Related Stuff:
 
