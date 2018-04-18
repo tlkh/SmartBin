@@ -51,12 +51,16 @@
 <InfoView>
     BoxLayout:
         RstDocument:
-            source: 'data/recycling.rst'
-        Button:
-            text: 'Back to Main Screen'
-            on_press:
-                root.manager.transition.direction = 'right'
-                root.manager.current = 'mainView'
+            source: 'data/recycling_new.rst'
+        BoxLayout:
+            orientation: 'vertical'
+            RstDocument:
+                source: 'data/trashy.rst'
+            Button:
+                text: 'Back to Main Screen'
+                on_press:
+                    root.manager.transition.direction = 'right'
+                    root.manager.current = 'mainView'
 <HelpView>
     BoxLayout:
         Button:
@@ -69,7 +73,7 @@
 <AboutView>
     BoxLayout:
         RstDocument:
-            source: 'data/about.rst'
+            source: 'data/about_new.rst'
         Button:
             text: 'Back to Main Screen'
             on_press:

@@ -1,0 +1,1 @@
+.. image:: img/recycling_60.jpg
