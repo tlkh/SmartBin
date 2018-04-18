@@ -240,6 +240,7 @@ class MainView(Screen):
         self.t_y = 0
 
         self.current_user = 'No user yet'
+        self.tickcount = 0
         self.labels = ["can", "bottle", "ken",
                        "grace", "frank", "tim", "shelly"]
         self.users = ["ken", "grace", "frank", "tim", "shelly"]
@@ -251,6 +252,7 @@ class MainView(Screen):
         global pred, cap, frame, strip, red, green, firebase
 
         can_detected, bottle_detected = False, False
+        self.tickcount += 1
 
         # Process frame from OpenCV
         frame = cap.read()
@@ -296,7 +298,8 @@ class MainView(Screen):
                     "\nThrow your can in the recycling bin\nPlease wash the can first!"
 
                 # Increment firebase user count for cans by 1 every time a can is detected with a valid user
-                if self.current_user in self.users:
+                # Also only updates every 10 ticks to reduce lag
+                if self.current_user in self.users and self.tickcount % 10 == 0:
                     firebase_update(firebase, self.current_user, 'cans', 1)
 
             if bottle_detected == True:
@@ -309,7 +312,8 @@ class MainView(Screen):
                     "\nThrow your bottle into the recycling bin\nPlease empty it first!"
 
                 # Increment firebase user count for bottles by 1 every time a bottle is detected with a valid user
-                if self.current_user in self.users:
+                # Also only updates every 10 ticks to reduce lag
+                if self.current_user in self.users and self.tickcount % 10 == 0:
                     firebase_update(firebase, self.current_user, 'bottles', 1)
             self.ids.labelObjDet.text = display_label
         else:
@@ -349,10 +353,7 @@ class AboutView(Screen):
 
     def __init__(self, **kwargs):
         super(AboutView, self).__init__(**kwargs)
-        # create keyboard bindings
-        self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
-        self._keyboard.bind(on_key_down=self._on_keyboard_down)
-
+        
 # ==========================================
 # Tie everything together and launch the app
 # ==========================================
