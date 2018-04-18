@@ -46,9 +46,9 @@ Getting everything to run on a resource constraint device such as a Raspberry Pi
 1. **What model are you using for object detection?**
   * We are using [MobileNet](https://arxiv.org/abs/1704.04861) as a feature extractor, followed by a version of the [SSD MultiBox Detector](https://arxiv.org/abs/1512.02325). The implementation was heavily based on work done by [experiencor](https://github.com/experiencor/keras-yolo2), who provided an initial base and framework for training and implementing object detection. We tweaked many parameters in order to get the result we wanted on our own dataset.
 2. **What's the performance on a Raspberry Pi 3, and how did you get there?**
-  1. We were able to get between 0.7 and 1.2FPS detection performance under ideal conditions. Due to multi-threading, we can run the video stream seperately at 20FPS (capped by design) to ensure a better user experience. This means that the bounding box tends to lag behind the video feed by about a second, but the video remains smooth.
-  2. To optimise camera and image processing performance, we used a heavily optmised OpenCV binary compiled for Raspberry Pi, taking full advantage of NEON instruction sets etc. The camera capture is also run on a seperate thread, with the Raspberry Pi's VideoCore IV GPU performing the heavy lifting of re-sizing and flipping the camera image.
-  3. The image processing and object detection pipeline is optimised to have as little pre-processing steps as possible, with the output from the camera capture being the exact input resolution for the MobileNet feature extractor.
+  * We were able to get between 0.7 and 1.2FPS detection performance under ideal conditions. Due to multi-threading, we can run the video stream seperately at 20FPS (capped by design) to ensure a better user experience. This means that the bounding box tends to lag behind the video feed by about a second, but the video remains smooth.
+  * To optimise camera and image processing performance, we used a heavily optmised OpenCV binary compiled for Raspberry Pi, taking full advantage of NEON instruction sets etc. The camera capture is also run on a seperate thread, with the Raspberry Pi's VideoCore IV GPU performing the heavy lifting of re-sizing and flipping the camera image.
+  * The image processing and object detection pipeline is optimised to have as little pre-processing steps as possible, with the output from the camera capture being the exact input resolution for the MobileNet feature extractor.
 
 ## How to run (Raspberry Pi/Raspbian Stretch)
 
