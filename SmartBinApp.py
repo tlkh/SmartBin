@@ -26,13 +26,42 @@ strip = Adafruit_NeoPixel(25, 18, 800000, 10, False, 100, 0)
 # Intialize the library (must be called once before other functions).
 strip.begin()
 
-for i in range(strip.numPixels()):
-    strip.setPixelColor(i, red)
-for i in range(6):
-    strip.setPixelColor(i, green)
-for i in range(6,7):
-    strip.setPixelColor(i, yellow)
-strip.show()
+class lightshow():
+    """
+    lightshow
+    """
+    
+    def __init__(self):
+        self.time_internal = 100
+        self.stopped = False
+        self.start_time = None
+        self.progress = 0
+
+    def start(self):
+        # start the thread to read frames from the video stream
+        self.start_time = time.time()
+        Thread(target=self.update, args=()).start()
+        return self
+
+    def update(self):
+        # keep looping infinitely until the thread is stopped
+        global strip, yellow, green
+        while True:
+            if self.stopped:
+                return
+            elif progress == 100:
+                self.stop()
+            else:
+                time.sleep(0.5)
+                progress += 0.5
+                for i in range(int(progress+1.4)):
+                    strip.setPixelColor(i, yellow)
+                for i in range(int(progress)):
+                    strip.setPixelColor(i, green)
+                strip.show()
+
+    def stop(self):
+        self.stopped = True
 
 # ===========================
 # Computer Vision Pipeline
@@ -48,6 +77,8 @@ from box_utils import draw_boxes
 from object_detection_model import ObjectDetection
 from threading import Thread
 
+progress_bar = lightshow().start()
+
 with open(config_path) as config_buffer:    
     config = json.load(config_buffer)
 
@@ -59,12 +90,6 @@ print("[i] Building model... This will take a while... (< 2 mins)")
 
 load_start = time.time()
 
-for i in range(7):
-    strip.setPixelColor(i, green)
-for i in range(7,16):
-    strip.setPixelColor(i, yellow)
-strip.show()
-
 model = ObjectDetection(backend = config['model']['backend'],
             input_size          = config['model']['input_size'], 
             labels              = config['model']['labels'], 
@@ -72,13 +97,6 @@ model = ObjectDetection(backend = config['model']['backend'],
             anchors             = config['model']['anchors'])
 
 print("[i] Model took", (time.time()-load_start), "seconds to load")
-
-for i in range(16):
-    strip.setPixelColor(i, green)
-for i in range(17,19):
-    strip.setPixelColor(i, yellow)
-strip.show()
-
 
 print("[c] Starting video capture")
 cap = PiVideoStream().start()
@@ -131,12 +149,6 @@ firebase_reset(firebase)
 # Perform one inference to test if everything is working
 # ======================================================
 
-for i in range(19):
-    strip.setPixelColor(i, green)
-for i in range(19,21):
-    strip.setPixelColor(i, yellow)
-strip.show()
-
 print("[i] Running self-test")
 try:
     frame = cap.read() # read one frame from the stream
@@ -148,12 +160,6 @@ except Exception as error:
     print("[!] Fatal error", end=": ")
     print(error)
     exit()
-
-for i in range(20):
-    strip.setPixelColor(i, green)
-for i in range(21,22):
-    strip.setPixelColor(i, yellow)
-strip.show()
 
 # ==============================
 # Kivy Configuration
@@ -181,12 +187,6 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.core.window import Window
 
 Builder.load_file('app_layout.kv') # Kivy layout file
-
-for i in range(21):
-    strip.setPixelColor(i, green)
-for i in range(21,23):
-    strip.setPixelColor(i, yellow)
-strip.show()
 
 # Declare individual screens
 class MainView(Screen):
@@ -341,10 +341,6 @@ class AboutView(Screen):
         if keycode[1] == 'a':
             sm.current = 'mainView'
         return True
-
-for i in range(25):
-    strip.setPixelColor(i, green)
-strip.show()
 
 # ==========================================
 # Tie everything together and launch the app
