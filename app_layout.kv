@@ -30,16 +30,11 @@
             spacing:20
             width: 250
             size_hint_x: None
-##            Button:
-##                text: 'Recycling in Singapore'
-##                on_press:
-##                    root.manager.transition.direction = 'left'
-##                    root.manager.current = 'infoView'
             Button:
                 text: 'How to recycle?'
                 on_press:
                     root.manager.transition.direction = 'left'
-                    root.manager.current = 'helpView'
+                    root.manager.current = 'infoView'
             Button:
                 text: "About our project!"
                 on_press:
@@ -55,32 +50,25 @@
         Image:
             source: 'img/recycling.jpg'
         BoxLayout:
-            orientation: 'vertical'
-            BoxLayout:
-                Image:
-                    source: 'img/trashy.gif'
-                Button:
-                    text: 'Back to Main Screen'
-                    on_press:
-                        root.manager.transition.direction = 'right'
-                        root.manager.current = 'mainView'
-
-<HelpView>
-    BoxLayout:
-        Button:
-            text: 'Placeholder (Help)'
-        Button:
-            text: 'Back to Main Screen'
-            on_press:
-                root.manager.transition.direction = 'right'
-                root.manager.current = 'mainView'
+            orientation: 'vertical'          
+            Image:
+                source: 'img/trashy.gif'
+            Button:
+                text: 'Back to Main Screen'
+                on_press:
+                    root.manager.transition.direction = 'right'
+                    root.manager.current = 'mainView'
 
 <AboutView>
     BoxLayout:
         Image:
             source: 'img/about.jpg'
-        Button:
-            text: 'Back to Main Screen'
-            on_press:
-                root.manager.transition.direction = 'right'
-                root.manager.current = 'mainView'
+        BoxLayout:
+            orientation: 'vertical'          
+            Image:
+                source: 'img/trashy.gif'
+            Button:
+                text: 'Back to Main Screen'
+                on_press:
+                    root.manager.transition.direction = 'right'
+                    root.manager.current = 'mainView'

@@ -2,6 +2,9 @@
 # Configuration
 # =============
 
+import os
+os.environ['KIVY_HOME'] = "/home/pi/.kivy"
+
 config_path  = "data/config.json"
 weights_path = "data/best_weights_11.h5"
 frame_size = 1180, 1180 # Kivy resizes to this size before displaying the image
@@ -10,19 +13,25 @@ frame_size = 1180, 1180 # Kivy resizes to this size before displaying the image
 # Initialise LED Strip
 # ====================
 
+print("[i] Initialising LED Strip")
+
 from neopixel import *
 
 red = Color(0,255,0)
 green = Color(255,0,0)
+yellow = Color(255,255,0)
 
 # Create NeoPixel object with appropriate configuration.
 strip = Adafruit_NeoPixel(25, 18, 800000, 10, False, 100, 0)
 # Intialize the library (must be called once before other functions).
 strip.begin()
+
 for i in range(strip.numPixels()):
     strip.setPixelColor(i, red)
-for i in range(8):
+for i in range(6):
     strip.setPixelColor(i, green)
+for i in range(6,7):
+    strip.setPixelColor(i, yellow)
 strip.show()
 
 # ===========================
@@ -50,6 +59,12 @@ print("[i] Building model... This will take a while... (< 2 mins)")
 
 load_start = time.time()
 
+for i in range(7):
+    strip.setPixelColor(i, green)
+for i in range(7,16):
+    strip.setPixelColor(i, yellow)
+strip.show()
+
 model = ObjectDetection(backend = config['model']['backend'],
             input_size          = config['model']['input_size'], 
             labels              = config['model']['labels'], 
@@ -57,6 +72,13 @@ model = ObjectDetection(backend = config['model']['backend'],
             anchors             = config['model']['anchors'])
 
 print("[i] Model took", (time.time()-load_start), "seconds to load")
+
+for i in range(16):
+    strip.setPixelColor(i, green)
+for i in range(17,19):
+    strip.setPixelColor(i, yellow)
+strip.show()
+
 
 print("[c] Starting video capture")
 cap = PiVideoStream().start()
@@ -100,9 +122,6 @@ class predictions():
 # IOT Setup
 # =========
 
-import firebase_admin
-from firebase_admin import credentials, db
-import matplotlib.pyplot as plt
 from iot import *
 
 firebase = firebase_setup()
@@ -112,16 +131,29 @@ firebase_reset(firebase)
 # Perform one inference to test if everything is working
 # ======================================================
 
+for i in range(19):
+    strip.setPixelColor(i, green)
+for i in range(19,21):
+    strip.setPixelColor(i, yellow)
+strip.show()
+
 print("[i] Running self-test")
 try:
-    frame = cap.read()
-    boxes = model.predict(frame)
+    frame = cap.read() # read one frame from the stream
+    boxes = model.predict(frame) # get bounding boxes
+    # if previous line succeded, our model is functional123start the predictions stream
     pred = predictions().start()
     print("[+] Self-test: OK")
 except Exception as error:
     print("[!] Fatal error", end=": ")
     print(error)
     exit()
+
+for i in range(20):
+    strip.setPixelColor(i, green)
+for i in range(21,22):
+    strip.setPixelColor(i, yellow)
+strip.show()
 
 # ==============================
 # Kivy Configuration
@@ -149,6 +181,12 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.core.window import Window
 
 Builder.load_file('app_layout.kv') # Kivy layout file
+
+for i in range(21):
+    strip.setPixelColor(i, green)
+for i in range(21,23):
+    strip.setPixelColor(i, yellow)
+strip.show()
 
 # Declare individual screens
 class MainView(Screen):
@@ -242,6 +280,10 @@ class MainView(Screen):
         self._keyboard = None
 
     def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
+        global strip
+        for i in range(strip.numPixels()):
+            strip.setPixelColor(i, green)
+        strip.show()
         global sm
         if keycode[1] == '1':
             sm.current = 'infoView'
@@ -300,9 +342,20 @@ class AboutView(Screen):
             sm.current = 'mainView'
         return True
 
+for i in range(25):
+    strip.setPixelColor(i, green)
+strip.show()
+
 # ==========================================
 # Tie everything together and launch the app
 # ==========================================
+
+# everything works! set LED strip to initial state
+for i in range(strip.numPixels()):
+    strip.setPixelColor(i, red)
+for i in range(8):
+    strip.setPixelColor(i, green)
+strip.show()
 
 print("[u] Loading UI")
 Window.clearcolor = (1, 1, 1, 1) # set white background
