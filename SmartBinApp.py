@@ -16,6 +16,8 @@ frame_size = 1180, 1180 # Kivy resizes to this size before displaying the image
 print("[i] Initialising LED Strip")
 
 from neopixel import *
+from threading import Thread
+import time
 
 red = Color(0,255,0)
 green = Color(255,0,0)
@@ -28,14 +30,16 @@ strip.begin()
 
 class lightshow():
     """
-    lightshow
+    A thread that's sole purpose is to show you the loading progress.
+    The model takes around 110 seconds to load, so that's what the progress bar shows you.
     """
     
     def __init__(self):
-        self.time_internal = 100
+        global strip
         self.stopped = False
         self.start_time = None
         self.progress = 0
+        self.pixels = strip.numPixels()
 
     def start(self):
         # start the thread to read frames from the video stream
@@ -49,14 +53,16 @@ class lightshow():
         while True:
             if self.stopped:
                 return
-            elif progress == 100:
+            elif self.progress == 100:
                 self.stop()
             else:
-                time.sleep(0.5)
-                progress += 0.5
-                for i in range(int(progress+1.4)):
+                time.sleep(0.6)
+                self.progress += 0.5
+                for i in range(int( (self.progress+4.4)/100*self.pixels) ):
+                    strip.setPixelColor(i, red)
+                for i in range(int( (self.progress+2.6)/100*self.pixels) ):
                     strip.setPixelColor(i, yellow)
-                for i in range(int(progress)):
+                for i in range(int(self.progress/100*self.pixels)):
                     strip.setPixelColor(i, green)
                 strip.show()
 
@@ -70,14 +76,13 @@ class lightshow():
 #     2. Inference stream
 # ===========================
 
+progress_bar = lightshow().start()
+
 print("[i] Initialising Computer Vision pipeline")
-import cv2, json, time
+import cv2, json
 import numpy as np
 from box_utils import draw_boxes
 from object_detection_model import ObjectDetection
-from threading import Thread
-
-progress_bar = lightshow().start()
 
 with open(config_path) as config_buffer:    
     config = json.load(config_buffer)
