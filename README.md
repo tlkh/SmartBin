@@ -74,3 +74,5 @@ Other Related Stuff:
 * Grace Tan
 * Frank Lee
 * Shuai Shuai
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
