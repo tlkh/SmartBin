@@ -27,7 +27,7 @@ import time
 
 red = Color(0, 255, 0)
 green = Color(255, 0, 0)
-red = Color(0, 0, 255)
+blue = Color(0, 0, 255)
 yellow = Color(255, 255, 0)
 
 # Create NeoPixel object with appropriate configuration.
@@ -250,7 +250,7 @@ class MainView(Screen):
 
     def tick(self, dt):
         global pred, cap, frame, strip, red, green, blue
-        global firebase
+        #global firebase
 
         can_detected, bottle_detected = False, False
         #self.tickcount += 1
