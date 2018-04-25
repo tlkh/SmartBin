@@ -61,16 +61,25 @@ def draw_boxes(image, boxes, labels):
         xmax = int(box.xmax*image_w)
         ymax = int(box.ymax*image_h)
         label = labels[box.get_label()]
+        score = box.get_score()
         if label == "can":
             cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)
         elif label == "bottle":
             cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (0, 255, 255), 2)
-        else:
+        elif score > 0.7:
             cv2.rectangle(image, (xmin, ymin),
                           (xmax, ymax), (255, 255, 255), 2)
             cv2.putText(image,
                         labels[box.get_label()] + ' ' +
-                        str(round(box.get_score(), 2)),
+                        str(round(score, 2)),
+                        (xmin, ymin - 5),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.4,
+                        (255, 255, 255), 1)
+        else:
+            cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (255, 0, 0), 2)
+            cv2.putText(image,
+                        "No ID",
                         (xmin, ymin - 5),
                         cv2.FONT_HERSHEY_SIMPLEX,
                         0.4,

@@ -27,6 +27,7 @@ import time
 
 red = Color(0, 255, 0)
 green = Color(255, 0, 0)
+red = Color(0, 0, 255)
 yellow = Color(255, 255, 0)
 
 # Create NeoPixel object with appropriate configuration.
@@ -165,8 +166,8 @@ class predictions():
 
 
 from iot import *
-firebase = firebase_setup()
-firebase_reset(firebase)
+#firebase = firebase_setup()
+# firebase_reset(firebase)
 
 # ======================================================
 # Perform one inference to test if everything is working
@@ -176,7 +177,7 @@ print("[i] Running self-test")
 try:
     frame = cap.read()  # read one frame from the stream
     boxes = model.predict(frame)  # get bounding boxes
-    # if previous line succeded, our model is functional123start the predictions stream
+    # if previous line succeded, our model is functional; start the predictions stream
     pred = predictions().start()
     print("[+] Self-test: OK")
 except Exception as error:
@@ -197,10 +198,10 @@ Config.set('graphics', 'borderless', 0)
 Config.set('kivy', 'exit_on_escape', 1)
 Config.write()
 
-# =========
+# ========================
 # GUI Setup
 #   Necessary Kivy imports
-# =========
+# =========================
 
 from kivy.app import App
 from kivy.graphics import *
@@ -231,8 +232,7 @@ class MainView(Screen):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = cv2.resize(image, frame_size)
         buf = image.tostring()
-        self.image_texture = Texture.create(
-            size=(image.shape[1], image.shape[0]), colorfmt='rgb')
+        self.image_texture = Texture.create(size=(image.shape[1], image.shape[0]), colorfmt='rgb')
         self.image_texture.blit_buffer(buf, colorfmt='rgb', bufferfmt='ubyte')
 
         # coordinates of Trashy
@@ -249,10 +249,11 @@ class MainView(Screen):
         Clock.schedule_interval(self.tick, 0.06)
 
     def tick(self, dt):
-        global pred, cap, frame, strip, red, green, firebase
+        global pred, cap, frame, strip, red, green, blue
+        global firebase
 
         can_detected, bottle_detected = False, False
-        self.tickcount += 1
+        #self.tickcount += 1
 
         # Process frame from OpenCV
         frame = cap.read()
@@ -283,10 +284,9 @@ class MainView(Screen):
                     can_detected = True
                 if self.labels[curr_label] == "bottle":
                     bottle_detected = True
-                if self.labels[curr_label] in self.users:
-
+                # if self.labels[curr_label] in self.users:
                     # Update current user property if a valid entity label is detected
-                    self.current_user = self.labels[curr_label]
+                 #   self.current_user = self.labels[curr_label]
 
             if can_detected == True:
                 # Set led lights at the 'cans' box to green to signal user
@@ -299,28 +299,29 @@ class MainView(Screen):
 
                 # Increment firebase user count for cans by 1 every time a can is detected with a valid user
                 # Also only updates every 10 ticks to reduce lag
-                if self.current_user in self.users and self.tickcount % 10 == 0:
-                    firebase_update(firebase, self.current_user, 'cans', 1)
+                # if self.current_user in self.users and self.tickcount % 10 == 0:
+                #    firebase_update(firebase, self.current_user, 'cans', 1)
 
             if bottle_detected == True:
-                # Set led lights at the 'bottles' box to green to signal user
+                # Set led lights at the 'blue' box to green to signal user
                 for i in range(8):
                     strip.setPixelColor(i, red)
                 for i in range(8, 15):
-                    strip.setPixelColor(i, green)
+                    strip.setPixelColor(i, blue)
                 display_label = display_label + \
                     "\nThrow your bottle into the recycling bin\nPlease empty it first!"
 
                 # Increment firebase user count for bottles by 1 every time a bottle is detected with a valid user
                 # Also only updates every 10 ticks to reduce lag
-                if self.current_user in self.users and self.tickcount % 10 == 0:
-                    firebase_update(firebase, self.current_user, 'bottles', 1)
+                # if self.current_user in self.users and self.tickcount % 10 == 0:
+                #    firebase_update(firebase, self.current_user, 'bottles', 1)
             self.ids.labelObjDet.text = display_label
         else:
             # Trashy avatar disappears and message popup
             self.ids.trashyView.opacity = 0.0
             self.ids.labelObjDet.text = "No recyclable trash detected"
         strip.show()
+        # reset the LED strip to original state (but don't show it!)
         for i in range(strip.numPixels()):
             strip.setPixelColor(i, red)
         for i in range(8):
@@ -353,7 +354,7 @@ class AboutView(Screen):
 
     def __init__(self, **kwargs):
         super(AboutView, self).__init__(**kwargs)
-        
+
 # ==========================================
 # Tie everything together and launch the app
 # ==========================================
